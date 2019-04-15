@@ -43,9 +43,16 @@ class BaseStub
      */
     public function __construct($hostname, $opts, $channel = null)
     {
-        $ssl_roots = file_get_contents(
-            dirname(__FILE__).'/../../../../etc/roots.pem'
-        );
+        $memcache_obj = memcache_connect('localhost', 11211);
+        $ssl_roots = memcache_get($memcache_obj, 'root');
+        if (!$ssl_roots) {
+           $ssl_roots = file_get_contents(
+                dirname(__FILE__).'/../../../../etc/roots.pem'
+                );
+            memcache_add($memcache_obj, 'root', $ssl_roots); 
+        }
+        memcache_close($memcache_obj);
+        
         ChannelCredentials::setDefaultRootsPem($ssl_roots);
 
         $this->hostname = $hostname;
